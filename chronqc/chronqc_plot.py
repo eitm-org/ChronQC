@@ -390,7 +390,9 @@ def stacked_bar_plot(df, column_name):
     df_dup_all.rename(columns={'First_Date': 'Date'}, inplace=True)
     # Add dumy dates at begnining and end of dataframe
     df_dup_all = add_dates(df_dup_all)
+    print(df_dup_all)
     df_dup_all_cumsum = add_dates(df_dup_all_cumsum)
+    print(df_dup_all_cumsum)
     #df_dup_all.to_clipboard(sep=',')
     # data_draw df_dup_all_cumsum
     # data_dispay df_dup_all
