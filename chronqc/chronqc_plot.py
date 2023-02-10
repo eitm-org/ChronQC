@@ -75,8 +75,9 @@ def fetch_stats_data(db, table_name, panel, categories='', ColumnName=''):
             i = i + 1
         if i == len(categories)-1:
             category_que = category_que + ' "{0}" '.format(categories[i])
-        #print('select * from {0} WHERE (Panel = "{1}") and ({2})'.format(table_name, panel, category_que))
-        curr = mycursor.execute('select * from {0} WHERE (Panel = "{1}") and ({2})'.format(table_name, panel, category_que))
+        print('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
+        # curr = mycursor.execute('select * from {0} WHERE (Panel = "{1}") and ({2})'.format(table_name, panel, category_que))
+        curr = mycursor.execute('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
     else:
         curr = mycursor.execute('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
     anndata = curr.fetchall()
@@ -276,77 +277,130 @@ def absolute_threshold(df, column, lower_threshold=np.nan, upper_threshold=np.na
     return df_bq
 
 
-def box_whisker_plot(df, ColumnName, Type='', lower_threshold=np.nan, upper_threshold=np.nan):
+def box_whisker_plot(df, ColumnName, show_whiskers=True, Type='', lower_threshold=np.nan, upper_threshold=np.nan):
     """
     (df) -> df
     generate box plot data form the df
     """
     df_copy = df.copy()
-    # Format columns
-    df_copy[ColumnName] = pd.to_numeric(df_copy[ColumnName], errors='coerce').round(2)
     if Type != '':
         df_copy = df_copy[df_copy['Type'].str.contains(Type)]
     if 'Run' not in df_copy.columns:
         df_copy['Run'] = df_copy['Sample']
     if 'Sample' not in df_copy.columns:
         df_copy['Sample'] = df_copy['Run']
-    # Get quantiles  25, 50 and 75 %
-    df_bp = df_copy.groupby('First_Date')[ColumnName].describe()
-    df_bp = pd.DataFrame(df_bp, columns=['25%', '50%', '75%']).reset_index()
-    # Get BP data
-    bp = pd.DataFrame.boxplot(df_copy, by='First_Date', return_type='dict')
-    a = bp[ColumnName]
-    outliers = [flier.get_ydata() for flier in a["fliers"]]
-#    boxes = [box.get_ydata() for box in a["boxes"]] # not needed
-#    medians = [median.get_ydata() for median in a["medians"]] # not needed
-    whiskers = [whiskers.get_ydata() for whiskers in a["whiskers"]]
-    outliers = pd.Series(outliers, name="outliers")
-    whiskers = pd.DataFrame(whiskers)
-    whiskers = list(whiskers[1])
-    Lower_whisker = []
-    Upper_whisker = []
-    w = 0
-    while w < len(whiskers):
-        Lower_whisker.append(whiskers[w])
-        Upper_whisker.append(whiskers[w+1])
-        w = w + 2
-    Lower_whisker = pd.Series(Lower_whisker, name="Lower_whisker")
-    Upper_whisker = pd.Series(Upper_whisker, name="Upper_whisker")
-    df_whis = pd.concat([Lower_whisker, Upper_whisker, outliers], axis=1)
-    df_bp = pd.merge(df_bp, df_whis, left_index=True, right_index=True,
-                     how='outer', suffixes=['', 'y'])
-    # split outliers list in column
-    outlier_df = pd.DataFrame(df_bp['outliers'].apply(pd.Series).stack())
-    if len(outlier_df) > 0:
-        outlier_df = outlier_df.reset_index(level=1, drop=True)
-        outlier_df.rename(columns={0: 'Outlier'}, inplace=True)
-        # Group runs and sample names in dataset
-        gp_df_run = df_copy.groupby(['First_Date', ColumnName])['Run'].agg(lambda x: ', '.join(x)).reset_index()
-        gp_df_samp = df_copy.groupby(['First_Date', ColumnName])['Sample'].agg(lambda x: ', '.join(x)).reset_index()
-        df_names = pd.merge(gp_df_run, gp_df_samp, left_index=True,
-                            right_index=True, how='outer', suffixes=['', 'y'])
-        # add outliers to bp
-        df_bp = pd.merge(df_bp, outlier_df, left_index=True, right_index=True,
-                         how='left')
-        # Add labels to bp
-        df_bp = pd.merge(df_bp, df_names, left_on=['First_Date', 'Outlier'],
-                         right_on=['First_Date', ColumnName], how='left')
-    # keeps only columns needed
-    df_bp.rename(columns={'First_Date': 'Date'}, inplace=True)
-    df_bp = pd.DataFrame(df_bp, columns=['Date', '25%', '75%', 'Upper_whisker',
-                                         'Lower_whisker', '50%', 'Outlier',
-                                         'Run', 'Sample'])
+    
+    df_bp = df_copy.iloc[:, df_copy.columns.str.endswith(ColumnName) | df_copy.columns.str.match('Date') | df_copy.columns.str.match('Sample') | df_copy.columns.str.match('Run')]
+    df_bp.rename(columns= {
+            f'q25_{ColumnName}': '25%',
+            f'q50_{ColumnName}': '50%',
+            f'q75_{ColumnName}': '75%',
+            f'lower_full_width_half_maximum_{ColumnName}': 'lower_full_width_half_maximum',
+            f'upper_full_width_half_maximum_{ColumnName}': 'upper_full_width_half_maximum',
+        },
+        inplace=True,
+    )
+    if not show_whiskers:
+        df_bp[f'lower_full_width_half_maximum'] = np.nan
+        df_bp[f'upper_full_width_half_maximum'] = np.nan
     df_bp['Sample'].fillna('NA', inplace=True)
     df_bp['Run'].fillna('NA', inplace=True)
     # set threshold
     df_bp['lower_threshold'] = float(lower_threshold)
     df_bp['upper_threshold'] = float(upper_threshold)
+    df_bp['Outlier'] = np.nan
     # Add dumy dates at begnining and end of dataframe
     df_bp = add_dates(df_bp)
     # Format data for writing to html file
-    df_bp['Data'] = df_bp[['Date', '25%', '75%', 'Upper_whisker', 'Lower_whisker', '50%', 'Outlier', 'upper_threshold', 'lower_threshold']].values.tolist()
+    df_bp['Data'] = df_bp[
+        [
+            'Date',
+            '25%',
+            '75%',
+            'lower_full_width_half_maximum',
+            'upper_full_width_half_maximum',
+            '50%',
+            'Outlier',
+            'upper_threshold',
+            'lower_threshold',
+        ]
+    ].values.tolist()
     df_bp = format_date_names(df_bp)
     return df_bp
+    
+
+# def box_whisker_plot(df, ColumnName, Type='', lower_threshold=np.nan, upper_threshold=np.nan):
+#     """
+#     (df) -> df
+#     generate box plot data form the df
+#     """
+#     df_copy = df.copy()
+#     # Format columns
+#     df_copy[ColumnName] = pd.to_numeric(df_copy[ColumnName], errors='coerce').round(2)
+#     if Type != '':
+#         df_copy = df_copy[df_copy['Type'].str.contains(Type)]
+#     if 'Run' not in df_copy.columns:
+#         df_copy['Run'] = df_copy['Sample']
+#     if 'Sample' not in df_copy.columns:
+#         df_copy['Sample'] = df_copy['Run']
+#     # Get quantiles  25, 50 and 75 %
+#     df_bp = df_copy.groupby('First_Date')[ColumnName].describe()
+#     df_bp = pd.DataFrame(df_bp, columns=['25%', '50%', '75%']).reset_index()
+#     # Get BP data
+#     bp = pd.DataFrame.boxplot(df_copy, by='First_Date', return_type='dict')
+#     a = bp[ColumnName]
+#     outliers = [flier.get_ydata() for flier in a["fliers"]]
+# #    boxes = [box.get_ydata() for box in a["boxes"]] # not needed
+# #    medians = [median.get_ydata() for median in a["medians"]] # not needed
+#     whiskers = [whiskers.get_ydata() for whiskers in a["whiskers"]]
+#     outliers = pd.Series(outliers, name="outliers")
+#     whiskers = pd.DataFrame(whiskers)
+#     whiskers = list(whiskers[1])
+#     Lower_whisker = []
+#     Upper_whisker = []
+#     w = 0
+#     while w < len(whiskers):
+#         Lower_whisker.append(whiskers[w])
+#         Upper_whisker.append(whiskers[w+1])
+#         w = w + 2
+#     Lower_whisker = pd.Series(Lower_whisker, name="Lower_whisker")
+#     Upper_whisker = pd.Series(Upper_whisker, name="Upper_whisker")
+#     df_whis = pd.concat([Lower_whisker, Upper_whisker, outliers], axis=1)
+#     df_bp = pd.merge(df_bp, df_whis, left_index=True, right_index=True,
+#                      how='outer', suffixes=['', 'y'])
+#     # split outliers list in column
+#     outlier_df = pd.DataFrame(df_bp['outliers'].apply(pd.Series).stack())
+#     if len(outlier_df) > 0:
+#         outlier_df = outlier_df.reset_index(level=1, drop=True)
+#         outlier_df.rename(columns={0: 'Outlier'}, inplace=True)
+#         # Group runs and sample names in dataset
+#         gp_df_run = df_copy.groupby(['First_Date', ColumnName])['Run'].agg(lambda x: ', '.join(x)).reset_index()
+#         gp_df_samp = df_copy.groupby(['First_Date', ColumnName])['Sample'].agg(lambda x: ', '.join(x)).reset_index()
+#         df_names = pd.merge(gp_df_run, gp_df_samp, left_index=True,
+#                             right_index=True, how='outer', suffixes=['', 'y'])
+#         # add outliers to bp
+#         df_bp = pd.merge(df_bp, outlier_df, left_index=True, right_index=True,
+#                          how='left')
+#         # Add labels to bp
+#         df_bp = pd.merge(df_bp, df_names, left_on=['First_Date', 'Outlier'],
+#                          right_on=['First_Date', ColumnName], how='left')
+#     # keeps only columns needed
+#     df_bp.rename(columns={'First_Date': 'Date'}, inplace=True)
+#     df_bp = pd.DataFrame(df_bp, columns=['Date', '25%', '75%', 'Upper_whisker',
+#                                          'Lower_whisker', '50%', 'Outlier',
+#                                          'Run', 'Sample'])
+#     df_bp['Sample'].fillna('NA', inplace=True)
+#     df_bp['Run'].fillna('NA', inplace=True)
+#     # set threshold
+#     df_bp['lower_threshold'] = float(lower_threshold)
+#     df_bp['upper_threshold'] = float(upper_threshold)
+#     # Add dumy dates at begnining and end of dataframe
+#     df_bp = add_dates(df_bp)
+#     # Format data for writing to html file
+#     df_bp['Data'] = df_bp[['Date', '25%', '75%', 'Upper_whisker', 'Lower_whisker', '50%', 'Outlier', 'upper_threshold', 'lower_threshold']].values.tolist()
+#     df_bp = format_date_names(df_bp)
+#     return df_bp
+
 
 def bar_line_plot(df, column_name):
     """
@@ -369,7 +423,7 @@ def bar_line_plot(df, column_name):
     return df_dup_all
 
 
-def stacked_bar_plot(df, column_name):
+def stacked_bar_plot(df, column_name_category):
     """
     (df) -> df
     generate stacked bar plot data form the df
@@ -377,27 +431,23 @@ def stacked_bar_plot(df, column_name):
     df_copy = df.copy()
     if 'Sample' not in df_copy.columns:
         df_copy['Sample'] = df_copy['Run']
-    df_dup_all = df_copy.groupby(['First_Date', column_name], as_index=False)["Sample"].count()
-    df_dup_all = df_dup_all.pivot(index='First_Date', columns=column_name, values='Sample')
+    df_dup_all = df.iloc[:, df.columns.str.endswith(column_name_category) \
+        | df.columns.str.match('Run') \
+        | df.columns.str.match('Date') \
+        | df.columns.str.match('Sample') \
+    ].set_index(['Run', 'Date', 'Sample']).round(3)
     # for drawing 
     df_dup_all_cumsum = df_dup_all.cumsum(axis="columns", skipna=True)
     df_dup_all_cumsum.reset_index(inplace=True)
-    df_dup_all_cumsum.rename(columns={'First_Date': 'Date'}, inplace=True)
     # for display actual data
     df_dup_all["Total"] = df_dup_all.sum(axis=1)
     df_dup_all.fillna(0, inplace=True)
     df_dup_all.reset_index(inplace=True)
-    df_dup_all.rename(columns={'First_Date': 'Date'}, inplace=True)
     # Add dumy dates at begnining and end of dataframe
     df_dup_all = add_dates(df_dup_all)
-    print(df_dup_all)
     df_dup_all_cumsum = add_dates(df_dup_all_cumsum)
-    print(df_dup_all_cumsum)
-    #df_dup_all.to_clipboard(sep=',')
-    # data_draw df_dup_all_cumsum
-    # data_dispay df_dup_all
     return df_dup_all, df_dup_all_cumsum
-    
+
     
 def create_dir(vals, df_chart, chart_id, chart_title, y_label, startdate, enddate, categories, ylabel2, df_chart_cumsum, per_sample, column_name):
     '''
@@ -590,6 +640,8 @@ def main(args):
         exclude_samples = chart.get('exclude_samples', '')
         per_sample = chart["chart_properties"].get('per_sample', 'False')
         categories = chart["chart_properties"].get('categories', '')
+        show_whiskers = chart["chart_properties"].get('show_whiskers', True)
+        print(show_whiskers)
         category_str = '' 
         ylabel2 = ''
         df_chart_cumsum = ''
@@ -700,7 +752,7 @@ def main(args):
             #df_chart.to_clipboard(sep=',')
             logger.info("For {0}: {1} data points will be written to html".format(chart_id, len(df_chart)))
         elif chart['chart_type'] == 'time_series_with_box_whisker_plot':
-            t = '{0} Monthly Box-and-Whisker Plot'.format(y)
+            t = '{0} Box-and-Whisker Plot'.format(y)
             y = '{0}'.format(y)
             chart_title = chart["chart_properties"].get('chart_title', t)
             y_label = chart["chart_properties"].get('y_label', y)
@@ -708,15 +760,17 @@ def main(args):
             lower_threshold = chart["chart_properties"].get("lower_threshold", np.nan) 
             upper_threshold = chart["chart_properties"].get("upper_threshold", np.nan)
             js_tmpl = string.Template(open(op.join(templates_dir, "box_whisker_plot.txt")).read())
-            if not column_name in df.columns:
-                logger.critical("FATAL: no {0} column found in {1}".format(column_name, table))
+            if not df.columns.str.contains(column_name).any():
+                logger.critical("FATAL: no {0} pattern found in columns of {1}".format(column_name, table))
                 sys.exit(1)
             if Type != '':
                 df_chart = box_whisker_plot(df, column_name, Type=Type, 
                                         lower_threshold=lower_threshold,
-                                        upper_threshold=upper_threshold)
+                                        upper_threshold=upper_threshold,
+                                        show_whiskers=show_whiskers,
+                                        )
             else:
-                df_chart = box_whisker_plot(df, column_name, lower_threshold=lower_threshold, upper_threshold=upper_threshold)
+                df_chart = box_whisker_plot(df, column_name, lower_threshold=lower_threshold, upper_threshold=upper_threshold, show_whiskers=show_whiskers)
             logger.info("For {0}: {1} data points will be written to html".format(chart_id, len(df_chart)))
         elif chart['chart_type'] == 'time_series_with_bar_line_plot':
             if categories == '':
@@ -753,22 +807,22 @@ def main(args):
             chart_title = chart["chart_properties"].get('chart_title', t)
             y_label = chart["chart_properties"].get('y_label', y)
             js_tmpl = string.Template(open(op.join(templates_dir, "stacked_bar_plot.txt")).read())
-            if not column_name in df.columns:
-                logger.critical("FATAL: no {0} column found in {1}".format(column_name, table))
+            if not df.columns.str.contains(column_name).any():
+                logger.critical("FATAL: no {0} pattern found in columns of {1}".format(column_name, table))
                 sys.exit(1)
             df_chart, df_chart_cumsum = stacked_bar_plot(df, column_name)
-            categories = df_chart_cumsum.columns
-            category_str = ''             
+            categories = df_chart_cumsum.iloc[:, df_chart_cumsum.columns.str.match('Date') | df_chart_cumsum.columns.str.contains(column_name)].columns
+            category_str = ''
             x = 0
             while x < len(categories)-1:
                 category_str = category_str + '"{0}", '.format(categories[x])
                 x = x + 1
             if x == len(categories)-1:
                 category_str = category_str + ' "{0}"'.format(categories[x])
-            df_chart['Data'] = df_chart.values.tolist()
-            df_chart = pd.DataFrame(df_chart['Data'])
-            df_chart_cumsum['Data'] = df_chart_cumsum.values.tolist()
-            df_chart_cumsum = pd.DataFrame(df_chart_cumsum['Data'])
+            df_chart['Data'] = df_chart.iloc[:, df_chart.columns.str.match('Date') | df_chart.columns.str.contains(column_name)].values.tolist()
+            # df_chart = pd.DataFrame(df_chart['Data'])
+            df_chart_cumsum['Data'] = df_chart_cumsum.iloc[:, df_chart_cumsum.columns.str.match('Date') | df_chart_cumsum.columns.str.contains(column_name)].values.tolist()
+            # df_chart_cumsum = pd.DataFrame(df_chart_cumsum['Data'])
             logger.info("For {0}: {1} data points will be written to html".format(chart_id, len(df_chart)))            
         else:
             logger.critical("For {0}: No suitable chart_type is defined check JSON".format(chart_id))

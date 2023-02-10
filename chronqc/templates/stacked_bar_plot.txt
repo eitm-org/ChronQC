@@ -1,11 +1,21 @@
 	
 	$dataname = $labeldata
 	$label_dataname = $data
-	
+	$runname = $run_name
+	$samplename = $sample_name
+
 	for (j = 0; j < $dataname.length; j++){
 		$dataname[j][0] = new Date($dataname[j][0])
 	}
-	
+	for (j = 0; j < $runname.length; j++){
+		for (i = 0; i < obj.length; i++){
+			var ann = obj[i]
+			if(ann.Run == $runname[j][0]){
+				$runname[j][1]=ann.Annotation
+			}else{}
+		}
+	}
+
 	$graphvar_labels = [$categories];
 	$graphvar_series ={}
 	
@@ -47,15 +57,24 @@
 			yLabelWidth: 15,
 			axes: {
 				x: {
-					axisLabelFormatter: function (d, gran) {
+					axisLabelFormatter: function (d,gran) {
 						return moment(d).format("MMM YY");
 					},
 					valueFormatter: function (d,opt,se,dy,row,col) {
 						
 						var text = [], 
 						data = $label_dataname[row],
-						
-						text = "<br><b>Month:</b> ".fontcolor("#000") + moment(d).format("MMMM YYYY") 
+						run = $runname[row],
+						sample = $samplename[row];
+						if("True"){
+							text = "<b> Sample ID: </b>".fontcolor("#000") + run
+									+ "<br/><b> Run ID: </b>".fontcolor("#000") + sample + "</font>" 
+									+ "<br><b> Date:</b> ".fontcolor("#000") + moment(d).format("DD/MM/YYYY") 
+						}else{
+							text = "<b>Run ID: </b>".fontcolor("#000") + run[col] 
+									+ "<br/><b>Sample ID (y-value): </b>".fontcolor("#000") + sample + "</font>" 
+									+ "<br><b>Date:</b> ".fontcolor("#000") + moment(d).format("DD/MM/YYYY") 
+						}
 						for (i=1;i<$graphvar_labels.length+1; i++){
 							if(i==$graphvar_labels.length){text = text + "<br><b>Total:</b> ".fontcolor("#000000") + data[i] }
 							else {
@@ -64,7 +83,6 @@
 								text = text +"<br><b>"+ name.fontcolor(color) +":</b> " + data[i]
 							}
 						}
-						
 						return text
 												
 					},				
