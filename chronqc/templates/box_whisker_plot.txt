@@ -59,10 +59,10 @@
 								+ "<br><b>Median:</b> ".fontcolor("#7e04a3") + data[5] 
 						
 						if (data[3] != null){
-							text = text + "<br><b>Upper Spread (Full Width Half Max):</b> ".fontcolor("#ff0000") + data[3] 
+							text = text + "<br><b>Upper Spread (Full Width Half Max):</b> ".fontcolor("#007a0a") + data[3] 
 						}
 						if (data[4] != null){
-							text = text + "<br><b>Lower Spead (Full Width Half Max):</b> ".fontcolor("#ff0000") + data[4] 
+							text = text + "<br><b>Lower Spead (Full Width Half Max):</b> ".fontcolor("#f442d1") + data[4] 
 						}
 
 						if (data[7] != null){
@@ -152,18 +152,14 @@
 					canvas.closePath();
 					canvas.stroke();
 				}
-				
 			},
 			pointClickCallback: function(e, point) {
-				if($dataname[point.idx][6] == null)return;
-				else{
-					run = $samplename[point.idx]
-					date = $dataname[point.idx][0]
-					date =  moment(date).format("DD-MM-YYYY")
-					//copyToClipboard(run)
-					chartid = "$chart_id"
-					makeQuery(run,date, chartid)
-				}
+				run = $runname[point.idx][0];
+				date = $dataname[point.idx][0];
+				date =  moment(date).format("DD-MM-YYYY");
+				//copyToClipboard(run);
+				chartid = "$chart_id"
+				makeQuery(run,date, chartid)
 			},
 		}
 	);	

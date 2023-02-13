@@ -106,7 +106,15 @@
 					canvas.stroke();
 				}
 				
-			}
+			},
+			pointClickCallback: function(e, point) {
+				run = $runname[point.idx][0];
+				date = $dataname[point.idx][0];
+				date =  moment(date).format("DD-MM-YYYY");
+				//copyToClipboard(run);
+				chartid = "$chart_id"
+				makeQuery(run,date, chartid)
+			},
 		}
 	);		
 	document.getElementById("$restorebutton").onclick 	= function() 	{ restorePositioning($graphvar); };

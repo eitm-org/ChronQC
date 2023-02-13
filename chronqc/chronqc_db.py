@@ -160,9 +160,10 @@ def main(args):
         sys.exit(1)
     utils.print_progress(2, 4, prefix='Running ChronQC', decimals=1, bar_length=50)
 # Read multiqc_stats
-    df = pd.read_csv(multiqc_stats, sep='\t', comment='#', chunksize=1000,
-                     low_memory=False, iterator=True)
-    df = pd.concat(list(df), ignore_index=True)
+    df = pd.read_csv(multiqc_stats, sep='\t')
+    # print(df[['Sample']])
+    # df = pd.concat(list(df), ignore_index=True)
+    print(df[['Sample']])
     logger.info("Got {0} records from {1} for ChronQC SQLite db generation".format(len(df), multiqc_stats))
     if len(df) == 0:
         logger.critical("FATAL: No records found in {0}".format(multiqc_stats))
@@ -210,6 +211,9 @@ def main(args):
     # Add panel
     df['Panel'] = panel
     # Add run and date information
+    # df = df.loc[:,~df.columns.duplicated()].copy()
+    # print(df_run.dtypes)
+    print(df[['Sample']])
     df = pd.merge(df_run, df, left_on='Sample', right_on='Sample', how='inner')
     if len(df) == 0:
         logger.critical("FATAL: Run ID's do not match the sample information in {0}".format(multiqc_stats))
