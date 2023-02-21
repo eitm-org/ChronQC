@@ -540,7 +540,7 @@ def main(args):
     if args.prefix is not None:
         prefix = '{0}.{1}.{2}'.format(args.prefix, panel, 'chronqc')
     else:
-        prefix = '{0}.{1}.{2}'.format(panel, 'chronqc')
+        prefix = '{0}.{1}'.format(panel, 'chronqc')
 
     # Get output file
     if args.output is not None:
