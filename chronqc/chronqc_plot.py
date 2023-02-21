@@ -537,6 +537,7 @@ def main(args):
 # output dir and file
     # Get output directory 1. user defined 2. db dir 3. multiqc_stats dir
     # Output file name
+    day = date.today().strftime("%d_%b_%Y")
     if args.prefix is not None:
         prefix = '{0}.{1}.{2}'.format(args.prefix, panel, 'chronqc')
     else:
