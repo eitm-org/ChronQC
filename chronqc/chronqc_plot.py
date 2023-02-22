@@ -436,7 +436,6 @@ def stacked_bar_plot(df, column_name_category):
         | df.columns.str.match('Date') \
         | df.columns.str.match('Sample') \
     ]
-    df_dup_all['Sample'] = df_dup_all['Run']
     agg_samples = df_dup_all.groupby(['Run', 'Date'])['Sample'].transform(lambda x: ','.join(x))
     df_dup_all = df_dup_all.groupby(['Run', 'Date']).mean().round(3).reset_index()
     df_dup_all = df_dup_all.join(agg_samples)
