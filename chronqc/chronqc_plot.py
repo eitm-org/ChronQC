@@ -218,9 +218,8 @@ def mean_and_stdev(df, Duplicates, win, kind='lines', per_sample='False'):
         # add rolling mean and std
         df_dup_all = rolling_mean(df_dup_all, Duplicates, win)
         # # swap run and sample columns
-        print(df_dup_all.columns)
         df_dup_all = df_dup_all.rename(columns={'Run': 'Sample', 'Sample': 'Run'})
-        print(df_dup_all.columns)
+        print(df_dup_all)
     # format columns for dygraph
     if kind == 'lines':
         columns = ['Run', 'Date', 'negstd', 'mean', 'posstd',
