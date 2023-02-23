@@ -454,7 +454,7 @@ def stacked_bar_plot(df, column_name_category):
     df_dup_all_cumsum = add_dates(df_dup_all_cumsum)
     return df_dup_all, df_dup_all_cumsum
 
-    
+
 def create_dir(vals, df_chart, chart_id, chart_title, y_label, startdate, enddate, categories, ylabel2, df_chart_cumsum, per_sample, column_name):
     '''
     df, dir -> dir
@@ -825,7 +825,7 @@ def main(args):
                 x = x + 1
             if x == len(categories)-1:
                 category_str = category_str + ' "{0}"'.format(categories[x])
-            df_chart['Data'] = df_chart.iloc[:, df_chart.columns.str.match('Date') | df_chart.columns.str.contains(column_name)].values.tolist()
+            df_chart['Data'] = df_chart.iloc[:, df_chart.columns.str.match('Date') | df_chart.columns.str.match('Total') | df_chart.columns.str.contains(column_name)].values.tolist()
             # df_chart = pd.DataFrame(df_chart['Data'])
             df_chart_cumsum['Data'] = df_chart_cumsum.iloc[:, df_chart_cumsum.columns.str.match('Date') | df_chart_cumsum.columns.str.contains(column_name)].values.tolist()
             # df_chart_cumsum = pd.DataFrame(df_chart_cumsum['Data'])
