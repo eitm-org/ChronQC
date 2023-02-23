@@ -238,6 +238,7 @@ def mean_and_stdev(df, Duplicates, win, kind='lines', per_sample='False'):
         df_dup_all['Values'] = df_dup_all[['{0}_1'.format(Duplicates), Duplicates, '{0}_2'.format(Duplicates)]].values.round(2).tolist()
         df_dup_all['Data'] = df_dup_all[['Date', 'Range', 'Values']].values.tolist()
     df_dup_all = format_date_names(df_dup_all)
+    print(df_dup_all)
     return df_dup_all
 
 
