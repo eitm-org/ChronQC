@@ -75,11 +75,11 @@ def fetch_stats_data(db, table_name, panel, categories='', ColumnName=''):
             i = i + 1
         if i == len(categories)-1:
             category_que = category_que + ' "{0}" '.format(categories[i])
-        print('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
+        print('select  distinct * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
         # curr = mycursor.execute('select * from {0} WHERE (Panel = "{1}") and ({2})'.format(table_name, panel, category_que))
-        curr = mycursor.execute('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
+        curr = mycursor.execute('select distinct * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
     else:
-        curr = mycursor.execute('select * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
+        curr = mycursor.execute('select distinct * from {0} WHERE Panel = "{1}"'.format(table_name, panel))
     anndata = curr.fetchall()
     df = pd.DataFrame(anndata)
     df.columns = [c[0] for c in curr.description]
