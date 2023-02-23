@@ -209,15 +209,16 @@ def mean_and_stdev(df, Duplicates, win, kind='lines', per_sample='False'):
         # merge names with mean duplicates
         df_dup_all = pd.merge(df_dup_all, df_names, left_on=['Run', 'Date'],
                               right_on=['Run', 'Date'], how='left')
+        # add rolling mean and std
+        df_dup_all = rolling_mean(df_dup_all, Duplicates, win)
     else:
         df_dup_all = df.copy()
         #df_dup_all['Sample'] = df_dup_all[['Sample', Duplicates]].apply(lambda x: '{} ({})'.format(x[0], x[1]), axis=1)
         df_dup_all = pd.DataFrame(df_dup_all, columns=['Run', 'Date', 'Sample', Duplicates])
+        # add rolling mean and std
+        df_dup_all = rolling_mean(df_dup_all, Duplicates, win)
         # # swap run and sample columns 
-        print('SWAP')
         df_dup_all.columns = ['Sample', 'Date', 'Run', Duplicates]
-    # add rolling mean and std
-    df_dup_all = rolling_mean(df_dup_all, Duplicates, win)
     # format columns for dygraph
     if kind == 'lines':
         columns = ['Run', 'Date', 'negstd', 'mean', 'posstd',
