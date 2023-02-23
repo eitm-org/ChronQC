@@ -67,8 +67,8 @@
 						run = $runname[row],
 						sample = $samplename[row];
 						if("True"){
-							text = "<b> Sample ID: </b>".fontcolor("#000") + run
-									+ "<br/><b> Run ID: </b>".fontcolor("#000") + sample + "</font>" 
+							text = "<b> Run ID: </b>".fontcolor("#000") + run
+									+ "<br/><b> Sample ID: </b>".fontcolor("#000") + sample + "</font>" 
 									+ "<br><b> Date:</b> ".fontcolor("#000") + moment(d).format("DD/MM/YYYY") 
 						}else{
 							text = "<b>Run ID: </b>".fontcolor("#000") + run[col] 
