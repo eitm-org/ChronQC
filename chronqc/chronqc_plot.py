@@ -214,6 +214,7 @@ def mean_and_stdev(df, Duplicates, win, kind='lines', per_sample='False'):
         #df_dup_all['Sample'] = df_dup_all[['Sample', Duplicates]].apply(lambda x: '{} ({})'.format(x[0], x[1]), axis=1)
         df_dup_all = pd.DataFrame(df_dup_all, columns=['Run', 'Date', 'Sample', Duplicates])
         # # swap run and sample columns 
+        print('SWAP')
         df_dup_all.columns = ['Sample', 'Date', 'Run', Duplicates]
     # add rolling mean and std
     df_dup_all = rolling_mean(df_dup_all, Duplicates, win)
@@ -238,7 +239,7 @@ def mean_and_stdev(df, Duplicates, win, kind='lines', per_sample='False'):
         df_dup_all['Values'] = df_dup_all[['{0}_1'.format(Duplicates), Duplicates, '{0}_2'.format(Duplicates)]].values.round(2).tolist()
         df_dup_all['Data'] = df_dup_all[['Date', 'Range', 'Values']].values.tolist()
     df_dup_all = format_date_names(df_dup_all)
-    print(df_dup_all)
+    print(df_dup_all.head())
     return df_dup_all
 
 
