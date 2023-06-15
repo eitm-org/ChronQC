@@ -297,14 +297,18 @@ def box_whisker_plot(df, ColumnName, show_whiskers=True, Type='', lower_threshol
             f'q25_{ColumnName}': '25%',
             f'q50_{ColumnName}': '50%',
             f'q75_{ColumnName}': '75%',
-            f'lower_full_width_half_maximum_{ColumnName}': 'lower_full_width_half_maximum',
-            f'upper_full_width_half_maximum_{ColumnName}': 'upper_full_width_half_maximum',
+            f'min_{ColumnName}': 'min',
+            f'max_{ColumnName}': 'max',
         },
         inplace=True,
     )
     if not show_whiskers:
-        df_bp[f'lower_full_width_half_maximum'] = np.nan
-        df_bp[f'upper_full_width_half_maximum'] = np.nan
+        df_bp[f'upper_whisker'] = np.nan
+        df_bp[f'lower_whisker'] = np.nan
+    else:
+        df_bp[f'upper_whisker'] = 1.5 * (df_bp['75%'] - df_bp['25%']) + df_bp['75%']
+        df_bp[f'lower_whisker'] = df_bp['25%'] - 1.5 * (df_bp['75%'] - df_bp['25%'])
+
     df_bp['Sample'].fillna('NA', inplace=True)
     df_bp['Run'].fillna('NA', inplace=True)
     # set threshold
@@ -319,8 +323,8 @@ def box_whisker_plot(df, ColumnName, show_whiskers=True, Type='', lower_threshol
             'Date',
             '25%',
             '75%',
-            'lower_full_width_half_maximum',
-            'upper_full_width_half_maximum',
+            'lower_whisker',
+            'upper_whisker',
             '50%',
             'Outlier',
             'upper_threshold',

@@ -19,7 +19,7 @@
     	document.getElementById("$divname"),
 		$dataname, 
 		{
-            labels: ["Date","1st Quantile","3rd Quantile","Lower Full Width Half Max", "Upper Full Width Half Max", "Median","Outlier", "Threshold", "Threshold"],
+            labels: ["Date","1st Quantile","3rd Quantile","Lower Whisker", "Upper Whisker", "Median","Outlier", "Threshold", "Threshold"],
 			labelsDiv: document.getElementById("$labeldiv"),
 			labelsSeparateLines: true,
 			showRangeSelector: true,
@@ -59,10 +59,10 @@
 								+ "<br><b>Median:</b> ".fontcolor("#7e04a3") + data[5] 
 						
 						if (data[3] != null){
-							text = text + "<br><b>Upper Spread (Full Width Half Max):</b> ".fontcolor("#007a0a") + data[3] 
+							text = text + "<br><b>Lower Spread (1.5 * IQR):</b> ".fontcolor("#007a0a") + data[3] 
 						}
 						if (data[4] != null){
-							text = text + "<br><b>Lower Spead (Full Width Half Max):</b> ".fontcolor("#f442d1") + data[4] 
+							text = text + "<br><b>Upper Spead (1.5 * IQR):</b> ".fontcolor("#f442d1") + data[4] 
 						}
 
 						if (data[7] != null){
