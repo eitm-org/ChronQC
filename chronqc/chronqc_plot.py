@@ -329,7 +329,59 @@ def box_whisker_plot(df, ColumnName, show_whiskers=True, Type='', lower_threshol
     ].values.tolist()
     df_bp = format_date_names(df_bp)
     return df_bp
+
+
+def box_whisker_min_max_plot(df, ColumnName, show_whiskers=True, Type='', lower_threshold=np.nan, upper_threshold=np.nan):
+    """
+    (df) -> df
+    generate box plot data form the df
+    """
+    df_copy = df.copy()
+    if Type != '':
+        df_copy = df_copy[df_copy['Type'].str.contains(Type)]
+    if 'Run' not in df_copy.columns:
+        df_copy['Run'] = df_copy['Sample']
+    if 'Sample' not in df_copy.columns:
+        df_copy['Sample'] = df_copy['Run']
     
+    df_bp = df_copy.iloc[:, df_copy.columns.str.endswith(ColumnName) | df_copy.columns.str.match('Date') | df_copy.columns.str.match('Sample') | df_copy.columns.str.match('Run')]
+    df_bp.rename(columns= {
+            f'q25_{ColumnName}': '25%',
+            f'q50_{ColumnName}': '50%',
+            f'q75_{ColumnName}': '75%',
+            f'min_{ColumnName}': 'min',
+            f'max_{ColumnName}': 'max',
+        },
+        inplace=True,
+    )
+    if not show_whiskers:
+        df_bp[f'min'] = np.nan
+        df_bp[f'max'] = np.nan
+    df_bp['Sample'].fillna('NA', inplace=True)
+    df_bp['Run'].fillna('NA', inplace=True)
+    # set threshold
+    df_bp['lower_threshold'] = float(lower_threshold)
+    df_bp['upper_threshold'] = float(upper_threshold)
+    df_bp['Outlier'] = np.nan
+    # Add dumy dates at begnining and end of dataframe
+    df_bp = add_dates(df_bp)
+    # Format data for writing to html file
+    df_bp['Data'] = df_bp[
+        [
+            'Date',
+            '25%',
+            '75%',
+            'min',
+            'max',
+            '50%',
+            'Outlier',
+            'upper_threshold',
+            'lower_threshold',
+        ]
+    ].values.tolist()
+    df_bp = format_date_names(df_bp)
+    return df_bp
+
 
 # def box_whisker_plot(df, ColumnName, Type='', lower_threshold=np.nan, upper_threshold=np.nan):
 #     """
@@ -766,6 +818,27 @@ def main(args):
             lower_threshold = chart["chart_properties"].get("lower_threshold", np.nan) 
             upper_threshold = chart["chart_properties"].get("upper_threshold", np.nan)
             js_tmpl = string.Template(open(op.join(templates_dir, "box_whisker_plot.txt")).read())
+            if not df.columns.str.contains(column_name).any():
+                logger.critical("FATAL: no {0} pattern found in columns of {1}".format(column_name, table))
+                sys.exit(1)
+            if Type != '':
+                df_chart = box_whisker_plot(df, column_name, Type=Type, 
+                                        lower_threshold=lower_threshold,
+                                        upper_threshold=upper_threshold,
+                                        show_whiskers=show_whiskers,
+                                        )
+            else:
+                df_chart = box_whisker_plot(df, column_name, lower_threshold=lower_threshold, upper_threshold=upper_threshold, show_whiskers=show_whiskers)
+            logger.info("For {0}: {1} data points will be written to html".format(chart_id, len(df_chart)))
+        elif chart['chart_type'] == 'time_series_with_box_whisker_min_max_plot':
+            t = '{0} Box-and-Whisker Plot'.format(y)
+            y = '{0}'.format(y)
+            chart_title = chart["chart_properties"].get('chart_title', t)
+            y_label = chart["chart_properties"].get('y_label', y)
+            Type = chart["chart_properties"].get("Type", '')
+            lower_threshold = chart["chart_properties"].get("lower_threshold", np.nan) 
+            upper_threshold = chart["chart_properties"].get("upper_threshold", np.nan)
+            js_tmpl = string.Template(open(op.join(templates_dir, "box_whisker_min_max_plot.txt")).read())
             if not df.columns.str.contains(column_name).any():
                 logger.critical("FATAL: no {0} pattern found in columns of {1}".format(column_name, table))
                 sys.exit(1)
