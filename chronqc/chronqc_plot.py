@@ -843,13 +843,13 @@ def main(args):
                 logger.critical("FATAL: no {0} pattern found in columns of {1}".format(column_name, table))
                 sys.exit(1)
             if Type != '':
-                df_chart = box_whisker_plot(df, column_name, Type=Type, 
+                df_chart = box_whisker_min_max_plot(df, column_name, Type=Type, 
                                         lower_threshold=lower_threshold,
                                         upper_threshold=upper_threshold,
                                         show_whiskers=show_whiskers,
                                         )
             else:
-                df_chart = box_whisker_plot(df, column_name, lower_threshold=lower_threshold, upper_threshold=upper_threshold, show_whiskers=show_whiskers)
+                df_chart = box_whisker_min_max_plot(df, column_name, lower_threshold=lower_threshold, upper_threshold=upper_threshold, show_whiskers=show_whiskers)
             logger.info("For {0}: {1} data points will be written to html".format(chart_id, len(df_chart)))
         elif chart['chart_type'] == 'time_series_with_bar_line_plot':
             if categories == '':
