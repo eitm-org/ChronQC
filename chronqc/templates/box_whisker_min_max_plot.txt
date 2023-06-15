@@ -59,10 +59,10 @@
 								+ "<br><b>Median:</b> ".fontcolor("#7e04a3") + data[5] 
 						
 						if (data[3] != null){
-							text = text + "<br><b>Maximum:</b> ".fontcolor("#007a0a") + data[3] 
+							text = text + "<br><b>Minimum:</b> ".fontcolor("#007a0a") + data[3] 
 						}
 						if (data[4] != null){
-							text = text + "<br><b>Minimum:</b> ".fontcolor("#f442d1") + data[4] 
+							text = text + "<br><b>Maximum:</b> ".fontcolor("#f442d1") + data[4] 
 						}
 
 						if (data[7] != null){
